@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">ホーム画面</string>
+    <string name="registration_title">登録画面</string>
+
+    <string name="address_label">アドレス</string>
+    <string name="address_hint">アドレスを入力してください</string>
+
+    <string name="domain_label">ドメイン名</string>
+    <string name="domain_hint">ドメイン名を入力してください</string>
+
+    <string name="request_signature_button">署名をリクエスト</string>
+    <string name="register_button">スマートコントラクトへ登録</string>
+
+    <string name="error_message">エラーが発生しました</string>
+
+    <string name="to_registration_button">新規登録画面へ</string>
+    <string name="wallet_address_label">ウォレットアドレス</string>
+    <string name="loading_text">Loading...</string>
+    <string name="transaction_send_button">トランザクション送信</string>
+    <string name="registration_complete_text">登録完了！\nTxHash: %1$s</string>
+    <string name="signature_success_text">署名リクエスト成功: %1$s</string>
+    <string name="signature_failure_text">署名リクエスト失敗</string>
+    <string name="signature_verification_failed">署名検証に失敗しました．</string>
+    <string name="signature_request_error">署名リクエスト中にエラーが発生しました．%1$s</string>
+    <string name="transaction_send_error">トランザクション送信中にエラーが発生しました．%1$s</string>
+
+    //送金処理関連
+    <string name="to_send_screen">送金画面へ</string>
+    <string name="send_title">送金画面</string>
+
+    <string name="back_button_description">戻る</string>
+    <string name="resolve_button">アドレスを解決</string>
+    <string name="amount_label">送金額 (ETH)</string>
+    <string name="send_button">送金</string>
+    <string name="sending_text">送金中...</string>
+    <string name="send_success_text">送金成功！\nTxHash: %1$s</string>
+</resources>
