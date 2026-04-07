@@ -1,7 +1,10 @@
 package com.example.hotwalletappv2.data.contract
 
 import com.example.hotwalletappv2.BuildConfig
+import com.example.hotwalletappv2.domain.model.DomainName
 import com.example.hotwalletappv2.domain.model.DomainRegistrationData
+import com.example.hotwalletappv2.domain.model.ServerSignature
+import com.example.hotwalletappv2.domain.model.WalletAddress
 import com.example.hotwalletappv2.domain.repository.SmartContractRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -57,7 +60,7 @@ class SmartContractRepositoryImpl : SmartContractRepository {
             Result.success(transactionHash)
         }
 
-    override suspend fun resolveDomain(domain: String): Result<String> =
+    override suspend fun resolveDomain(domain: String): Result<DomainRegistrationData> =
         withContext(Dispatchers.IO) {
             try {
                 val simpleENS = SimpleENS.load(
@@ -68,10 +71,17 @@ class SmartContractRepositoryImpl : SmartContractRepository {
                 )
                 val tuple = simpleENS.resolve(domain).send()
                 val address = tuple.component1()
+                val signature = tuple.component2()
                 if (address.isNullOrBlank() || address == "0x0000000000000000000000000000000000000000") {
                     Result.failure(Exception("Domain not registered"))
                 } else {
-                    Result.success(address)
+                    Result.success(
+                        DomainRegistrationData(
+                            address = WalletAddress(address),
+                            domain = DomainName(domain),
+                            signature = ServerSignature(signature)
+                        )
+                    )
                 }
             } catch (e: Exception) {
                 Result.failure(e)
@@ -104,6 +114,29 @@ class SmartContractRepositoryImpl : SmartContractRepository {
                 } else {
                     Result.success(ethSendTransaction.transactionHash)
                 }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun createUnsignedTransaction(
+        toAddress: String,
+        amountInWei: BigInteger
+    ): Result<RawTransaction> =
+        withContext(Dispatchers.IO) {
+            try {
+                val ethGetTransactionCount = web3j.ethGetTransactionCount(
+                    walletAddress, DefaultBlockParameterName.LATEST
+                ).sendAsync().get()
+                val nonce: BigInteger = ethGetTransactionCount.transactionCount
+
+                val gasPrice: BigInteger = web3j.ethGasPrice().send().gasPrice
+                val gasLimit: BigInteger = BigInteger.valueOf(21000)
+
+                val rawTransaction = RawTransaction.createEtherTransaction(
+                    nonce, gasPrice, gasLimit, toAddress, amountInWei
+                )
+                Result.success(rawTransaction)
             } catch (e: Exception) {
                 Result.failure(e)
             }
