@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.newsecurewalletapp"
+    namespace = "com.example.hotwalletappv2"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.newsecurewalletapp"
+        applicationId = "com.example.hotwalletapp.v2"
         minSdk = 34
         targetSdk = 36
         versionCode = 1

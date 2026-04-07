@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NewSecureWalletApp"
+rootProject.name = "HotWalletAppVer2"
 include(":app")
