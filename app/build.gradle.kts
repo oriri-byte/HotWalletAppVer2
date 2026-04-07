@@ -87,4 +87,5 @@ dependencies {
     implementation("org.web3j:core:4.14.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.lightspark:compose-qr-code:1.0.1")
 }
