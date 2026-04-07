@@ -1,5 +1,6 @@
 package com.example.hotwalletappv2.ui.screen.send
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,6 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
@@ -27,11 +31,13 @@ fun SendScreen(
     modifier: Modifier = Modifier, viewModel: SendViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OutlinedTextField(
@@ -61,10 +67,26 @@ fun SendScreen(
 
             }
 
-            is SendUiState.Resolved -> {
+            is SendUiState.Resolved, is SendUiState.ReadyToTransfer -> {
+                val data = if (uiState is SendUiState.Resolved) uiState.data else (uiState as SendUiState.ReadyToTransfer).data
                 Text(
-                    text = "解決されたアドレス： ${uiState.address}"
+                    text = "ドメイン： ${data.domain.value}"
                 )
+                Text(
+                    text = "アドレス： ${data.address.value}"
+                )
+                Text(
+                    text = "署名： ${data.signature.value}"
+                )
+                if (uiState is SendUiState.ReadyToTransfer) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(modifier = Modifier.background(Color.White).padding(8.dp)) {
+                        com.lightspark.composeqr.QrCodeView(
+                            data = uiState.qrData,
+                            modifier = Modifier.size(200.dp)
+                        )
+                    }
+                }
             }
 
             is SendUiState.Sending -> {
@@ -104,9 +126,18 @@ fun SendScreen(
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = { viewModel.sendFunds() },
-            enabled = viewModel.resolvedAddress.isNotBlank() && viewModel.amount.isNotBlank() && uiState !is SendUiState.Sending
+            enabled = uiState is SendUiState.Resolved && viewModel.amount.isNotBlank() && uiState !is SendUiState.Sending
         ) {
             Text(text = stringResource(id = R.string.send_button))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { viewModel.prepareTransfer() },
+            enabled = uiState is SendUiState.Resolved && viewModel.amount.isNotBlank() && uiState !is SendUiState.Sending
+        ) {
+            Text(text = "コールドウォレット用QR作成")
         }
 
     }
