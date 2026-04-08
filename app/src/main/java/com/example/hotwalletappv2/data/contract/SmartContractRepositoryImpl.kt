@@ -88,37 +88,6 @@ class SmartContractRepositoryImpl : SmartContractRepository {
             }
         }
 
-    override suspend fun sendFunds(toAddress: String, amountInWei: BigInteger): Result<String> =
-        withContext(Dispatchers.IO) {
-            try {
-                val credentials2 = Credentials.create(BuildConfig.WALLET_PRIVATE_KEY2)
-                val ethGetTransactionCount = web3j.ethGetTransactionCount(
-                    walletAddress2, DefaultBlockParameterName.LATEST
-                ).sendAsync().get()
-                val nonce = ethGetTransactionCount.transactionCount
-
-                val gasPrice = web3j.ethGasPrice().send().gasPrice
-                val gasLimit = BigInteger.valueOf(21000) // Standard Ether transfer gas limit
-
-                val rawTransaction = RawTransaction.createEtherTransaction(
-                    nonce, gasPrice, gasLimit, toAddress, amountInWei
-                )
-
-                val chainId = 11155111L
-                val signedMessage = TransactionEncoder.signMessage(rawTransaction, chainId, credentials2)
-                val hexValue = Numeric.toHexString(signedMessage)
-
-                val ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get()
-                if (ethSendTransaction.hasError()) {
-                    Result.failure(Exception(ethSendTransaction.error.message))
-                } else {
-                    Result.success(ethSendTransaction.transactionHash)
-                }
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
-
     override suspend fun createUnsignedTransaction(
         toAddress: String,
         amountInWei: BigInteger
@@ -126,17 +95,39 @@ class SmartContractRepositoryImpl : SmartContractRepository {
         withContext(Dispatchers.IO) {
             try {
                 val ethGetTransactionCount = web3j.ethGetTransactionCount(
-                    walletAddress, DefaultBlockParameterName.LATEST
+                    walletAddress2, DefaultBlockParameterName.LATEST
                 ).sendAsync().get()
                 val nonce: BigInteger = ethGetTransactionCount.transactionCount
 
                 val gasPrice: BigInteger = web3j.ethGasPrice().send().gasPrice
                 val gasLimit: BigInteger = BigInteger.valueOf(21000)
+                val chainId = 11155111L // Sepolia
 
                 val rawTransaction = RawTransaction.createEtherTransaction(
-                    nonce, gasPrice, gasLimit, toAddress, amountInWei
+                    chainId,
+                    nonce,
+                    gasLimit,
+                    toAddress,
+                    amountInWei,
+                    BigInteger.valueOf(1500000000L), // maxPriorityFeePerGas (1.5 Gwei)
+                    gasPrice // maxFeePerGas
                 )
                 Result.success(rawTransaction)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun broadcastTransaction(signedTransactionHex: String): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                val hexWithPrefix = if (signedTransactionHex.startsWith("0x")) signedTransactionHex else "0x$signedTransactionHex"
+                val ethSendTransaction = web3j.ethSendRawTransaction(hexWithPrefix).sendAsync().get()
+                if (ethSendTransaction.hasError()) {
+                    Result.failure(Exception(ethSendTransaction.error.message))
+                } else {
+                    Result.success(ethSendTransaction.transactionHash)
+                }
             } catch (e: Exception) {
                 Result.failure(e)
             }
