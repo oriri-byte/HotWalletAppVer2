@@ -33,6 +33,16 @@ fun SendScreen(
     val uiState = viewModel.uiState
     val scrollState = rememberScrollState()
 
+    if (viewModel.isScanning) {
+        com.example.hotwalletappv2.ui.screen.scanner.QrScannerScreen(
+            onScanned = { rawValue ->
+                viewModel.isScanning = false
+                viewModel.broadcastSignedTransaction(rawValue)
+            }
+        )
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -122,14 +132,6 @@ fun SendScreen(
             label = { Text(stringResource(id = R.string.amount_label)) }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { viewModel.sendFunds() },
-            enabled = uiState is SendUiState.Resolved && viewModel.amount.isNotBlank() && uiState !is SendUiState.Sending
-        ) {
-            Text(text = stringResource(id = R.string.send_button))
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
         Button(
@@ -138,6 +140,14 @@ fun SendScreen(
             enabled = uiState is SendUiState.Resolved && viewModel.amount.isNotBlank() && uiState !is SendUiState.Sending
         ) {
             Text(text = "コールドウォレット用QR作成")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { viewModel.isScanning = true }
+        ) {
+            Text(text = "署名済みトランザクションをスキャンして送信")
         }
 
     }

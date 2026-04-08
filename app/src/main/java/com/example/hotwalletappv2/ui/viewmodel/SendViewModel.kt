@@ -8,17 +8,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.hotwalletappv2.data.contract.SmartContractRepositoryImpl
 import com.example.hotwalletappv2.domain.usecase.PrepareColdWalletTransferUseCase
 import com.example.hotwalletappv2.domain.usecase.ResolveDomainUseCase
-import com.example.hotwalletappv2.domain.usecase.SendFundsUseCase
 import kotlinx.coroutines.launch
 
 class SendViewModel : ViewModel() {
     var domainName: String by mutableStateOf("")
     var amount: String by mutableStateOf("")
+    var isScanning: Boolean by mutableStateOf(false)
     var uiState: SendUiState by mutableStateOf(SendUiState.Idle)
         private set
     private val smartContractRepository = SmartContractRepositoryImpl()
     private val resolveDomainUseCase by lazy { ResolveDomainUseCase(smartContractRepository) }
-    private val sendFundsUseCase by lazy { SendFundsUseCase(smartContractRepository) }
     private val prepareColdWalletTransferUseCase by lazy { PrepareColdWalletTransferUseCase(smartContractRepository) }
 
     fun resolve() {
@@ -58,20 +57,19 @@ class SendViewModel : ViewModel() {
         }
     }
 
-    fun sendFunds() {
-        val currentState = uiState
-        if (currentState !is SendUiState.Resolved || amount.isBlank()) return
 
-        val address = currentState.data.address.value
+
+    fun broadcastSignedTransaction(signedTxHex: String) {
         uiState = SendUiState.Sending
         viewModelScope.launch {
-            val result = sendFundsUseCase(address, amount)
+            val broadcastSignedTransactionUseCase = com.example.hotwalletappv2.domain.usecase.BroadcastSignedTransactionUseCase(smartContractRepository)
+            val result = broadcastSignedTransactionUseCase(signedTxHex)
             result.fold(
                 onSuccess = { txHash ->
                     uiState = SendUiState.Success(txHash)
                 },
                 onFailure = { error ->
-                    uiState = SendUiState.Error("送金に失敗しました: ${error.message}")
+                    uiState = SendUiState.Error("トランザクション送信に失敗しました: ${error.message}")
                 }
             )
         }
